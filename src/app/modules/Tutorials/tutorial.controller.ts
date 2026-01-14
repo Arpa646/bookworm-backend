@@ -5,29 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { TutorialServices } from "./tutorial.service";
 import { Tutorial } from "./tutorial.interface";
 
-const createTutorial = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const { title, youtubeUrl, category } = req.body;
 
-    const tutorialData: Tutorial = {
-      title,
-      youtubeUrl,
-      category,
-      isDeleted: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const result = await TutorialServices.createTutorial(tutorialData as any);
-
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: "Tutorial created successfully",
-      data: result,
-    });
-  }
-);
 
 const getAllTutorials = catchAsync(async (req: Request, res: Response) => {
   try {
@@ -171,7 +149,29 @@ const deleteTutorial = catchAsync(
     }
   }
 );
+const createTutorial = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { title, youtubeUrl, category } = req.body;
 
+    const tutorialData: Tutorial = {
+      title,
+      youtubeUrl,
+      category,
+      isDeleted: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const result = await TutorialServices.createTutorial(tutorialData as any);
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Tutorial created successfully",
+      data: result,
+    });
+  }
+);
 export const TutorialController = {
   createTutorial,
   getAllTutorials,
