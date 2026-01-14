@@ -172,31 +172,7 @@ const getSingleReview = async (req: Request, res: Response) => {
   }
 };
 
-const getReviewsByBook = catchAsync(async (req: Request, res: Response) => {
-  const { bookId } = req.params;
-  
-  console.log("📚 Getting reviews for book ID:", bookId);
-  
-  if (!bookId) {
-    return res.status(StatusCodes.BAD_REQUEST).json({
-      success: false,
-      message: "Book ID is required",
-    });
-  }
 
-  const reviews = await ReviewServices.getReviewsByBookId(bookId);
-
-  console.log(`✅ Found ${reviews.length} approved reviews for book ${bookId}`);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: reviews.length > 0 
-      ? "Reviews retrieved successfully" 
-      : "No approved reviews found for this book",
-    data: reviews,
-  });
-});
 
 const getReviewsByUser = async (req: Request, res: Response) => {
   try {
@@ -366,7 +342,31 @@ const approveReview = catchAsync(
     }
   }
 );
+const getReviewsByBook = catchAsync(async (req: Request, res: Response) => {
+  const { bookId } = req.params;
+  
+  console.log("📚 Getting reviews for book ID:", bookId);
+  
+  if (!bookId) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      success: false,
+      message: "Book ID is required",
+    });
+  }
 
+  const reviews = await ReviewServices.getReviewsByBookId(bookId);
+
+  console.log(`✅ Found ${reviews.length} approved reviews for book ${bookId}`);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: reviews.length > 0 
+      ? "Reviews retrieved successfully" 
+      : "No approved reviews found for this book",
+    data: reviews,
+  });
+});
 export const ReviewController = {
   createReview,
   getAllReviews,
