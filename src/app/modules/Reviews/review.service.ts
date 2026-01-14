@@ -71,7 +71,6 @@ const updateReview = async (id: string, updatedData: Partial<Review>) => {
       return null;
     }
 
-    if (updatedData.rating !== undefined) review.rating = updatedData.rating;
     if (updatedData.comment !== undefined) review.comment = updatedData.comment;
     if (updatedData.status !== undefined) review.status = updatedData.status;
 

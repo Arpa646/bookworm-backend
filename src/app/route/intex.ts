@@ -7,6 +7,7 @@ import { UserRoutes } from '../modules/Registration/user.route';
 import { BookRoutes } from '../modules/Books/book.route';
 import { GenreRoutes } from '../modules/Genres/genre.route';
 import { ReviewRoutes } from '../modules/Reviews/review.route';
+import { RatingRoutes } from '../modules/Ratings/rating.route';
 import { ShelfRoutes } from '../modules/Shelf/shelf.route';
 import { TutorialRoutes } from '../modules/Tutorials/tutorial.route';
 import { RecommendationRoutes } from '../modules/Recommendations/recommendation.route';
@@ -45,6 +46,11 @@ const modulerRoutes=[
     {
         path:'/reviews',
         route:ReviewRoutes,
+        
+    },
+    {
+        path:'/ratings',
+        route:RatingRoutes,
         
     },
     {

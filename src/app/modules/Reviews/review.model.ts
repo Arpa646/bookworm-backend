@@ -12,15 +12,10 @@ const reviewSchema = new Schema<Review>({
     ref: "Book",
     required: true,
   } as any,
-  rating: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 5,
-  },
   comment: {
     type: String,
     trim: true,
+    required: true,
   },
   status: {
     type: String,
