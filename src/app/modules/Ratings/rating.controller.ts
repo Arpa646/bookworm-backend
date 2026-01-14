@@ -7,9 +7,7 @@ import { Rating } from "./rating.interface";
 
 const createRating = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    console.log("\n" + "=".repeat(60));
-    console.log("⭐ CREATE RATING REQUEST RECEIVED");
-    console.log("=".repeat(60));
+    
 
     const { bookId, rating } = req.body;
 

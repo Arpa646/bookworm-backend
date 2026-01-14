@@ -9,6 +9,7 @@ const user_route_1 = require("../modules/Registration/user.route");
 const book_route_1 = require("../modules/Books/book.route");
 const genre_route_1 = require("../modules/Genres/genre.route");
 const review_route_1 = require("../modules/Reviews/review.route");
+const rating_route_1 = require("../modules/Ratings/rating.route");
 const shelf_route_1 = require("../modules/Shelf/shelf.route");
 const tutorial_route_1 = require("../modules/Tutorials/tutorial.route");
 const recommendation_route_1 = require("../modules/Recommendations/recommendation.route");
@@ -33,6 +34,10 @@ const modulerRoutes = [
     {
         path: '/reviews',
         route: review_route_1.ReviewRoutes,
+    },
+    {
+        path: '/ratings',
+        route: rating_route_1.RatingRoutes,
     },
     {
         path: '/shelf',
