@@ -12,12 +12,11 @@ const createReview = catchAsync(
     console.log("📝 CREATE REVIEW REQUEST RECEIVED");
     console.log("=".repeat(60));
 
-    const { bookId, rating, comment } = req.body;
+    const { bookId, comment } = req.body;
 
     // Log request body
     console.log("\n📋 Request Body:");
     console.log("   Book ID:", bookId);
-    console.log("   Rating:", rating);
     console.log("   Comment:", comment || "(No comment provided)");
 
     // Debug: Log authentication info
@@ -49,23 +48,22 @@ const createReview = catchAsync(
     console.log("   User ID:", userId);
     console.log("   Type:", typeof userId);
 
-    // Validate rating
-    if (rating < 1 || rating > 5) {
+    // Validate comment (required for reviews)
+    if (!comment || comment.trim().length === 0) {
       console.log("\n❌ VALIDATION FAILED");
-      console.log("   Invalid rating:", rating);
-      console.log("   Required: Rating must be between 1 and 5");
+      console.log("   Missing comment");
+      console.log("   Required: Review must include a comment");
       console.log("=".repeat(60) + "\n");
       return res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
-        message: "Rating must be between 1 and 5",
+        message: "Comment is required for reviews. If you only want to rate, use the /ratings endpoint.",
       });
     }
 
     const reviewData: Review = {
       userId,
       bookId,
-      rating,
-      comment,
+      comment: comment.trim(),
       status: "pending",
       isDeleted: false,
       createdAt: new Date(),
@@ -75,7 +73,6 @@ const createReview = catchAsync(
     console.log("\n💾 Review Data Prepared:");
     console.log("   User ID:", reviewData.userId);
     console.log("   Book ID:", reviewData.bookId);
-    console.log("   Rating:", reviewData.rating);
     console.log("   Comment:", reviewData.comment || "(No comment)");
     console.log("   Status:", reviewData.status);
     console.log("   Created At:", reviewData.createdAt);
@@ -89,7 +86,6 @@ const createReview = catchAsync(
     console.log("   Status:", result[0]?.status || "pending");
     console.log("   User ID:", result[0]?.userId || "N/A");
     console.log("   Book ID:", result[0]?.bookId || "N/A");
-    console.log("   Rating:", result[0]?.rating || "N/A");
     console.log("   Comment:", result[0]?.comment || "(No comment)");
     console.log("=".repeat(60) + "\n");
 
@@ -230,11 +226,11 @@ const getReviewsByUser = async (req: Request, res: Response) => {
 
 const updateReview = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { rating, comment, status } = req.body;
+  const { comment, status } = req.body;
   
   console.log("🔄 Review Update Request:");
   console.log("   Review ID:", id);
-  console.log("   Updates:", { rating, comment, status });
+  console.log("   Updates:", { comment, status });
   
   try {
     if (!id) {
@@ -245,16 +241,7 @@ const updateReview = async (req: Request, res: Response) => {
       });
     }
 
-    if (rating && (rating < 1 || rating > 5)) {
-      console.log("❌ Invalid rating:", rating);
-      return res.status(StatusCodes.BAD_REQUEST).json({
-        success: false,
-        message: "Rating must be between 1 and 5",
-      });
-    }
-
     const updatedReview = await ReviewServices.updateReview(id, {
-      rating,
       comment,
       status,
     });
