@@ -27,10 +27,7 @@ const createRating = catchAsync(
 
     // Get userId from token (req.user.useremail contains the user ObjectId)
     if (!req.user || !req.user.useremail) {
-      console.log("\n❌ AUTHENTICATION FAILED");
-      console.log("   Reason: req.user or req.user.useremail is missing");
-      console.log("   Action: Returning 401 Unauthorized");
-      console.log("=".repeat(60) + "\n");
+     
       return res.status(StatusCodes.UNAUTHORIZED).json({
         success: false,
         message: "Authentication required. Please login to create a rating.",
@@ -38,8 +35,7 @@ const createRating = catchAsync(
     }
 
     const userId = req.user.useremail.toString();
-    console.log("\n✅ User ID extracted from token:");
-    console.log("   User ID:", userId);
+  
 
     // Validate rating
     if (!rating || rating < 1 || rating > 5) {
@@ -62,22 +58,10 @@ const createRating = catchAsync(
       updatedAt: new Date(),
     };
 
-    console.log("\n💾 Rating Data Prepared:");
-    console.log("   User ID:", ratingData.userId);
-    console.log("   Book ID:", ratingData.bookId);
-    console.log("   Rating:", ratingData.rating);
-    console.log("   Created At:", ratingData.createdAt);
-
-    console.log("\n🔄 Saving to database...");
+    
     const result = await RatingServices.createRating(ratingData as any);
     
-    console.log("\n✅ RATING CREATED/UPDATED SUCCESSFULLY!");
-    console.log("   Rating ID:", result[0]?._id || "N/A");
-    console.log("   User ID:", result[0]?.userId || "N/A");
-    console.log("   Book ID:", result[0]?.bookId || "N/A");
-    console.log("   Rating:", result[0]?.rating || "N/A");
-    console.log("=".repeat(60) + "\n");
-
+  
     sendResponse(res, {
       statusCode: StatusCodes.OK,
       success: true,
