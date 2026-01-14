@@ -4,8 +4,6 @@ import { AuthRoutes } from '../modules/Auth/auth.route';
 import { UserRoutes } from '../modules/Registration/user.route';
 
 
-import { PremiumRoutes } from '../modules/Premium/premium.route';
-import { RecipieRoutes } from '../modules/Recipie/recipie.route';
 import { BookRoutes } from '../modules/Books/book.route';
 import { GenreRoutes } from '../modules/Genres/genre.route';
 import { ReviewRoutes } from '../modules/Reviews/review.route';
@@ -33,16 +31,7 @@ const modulerRoutes=[
     },
    
    
-    {
-        path:'/premium',
-        route:PremiumRoutes,
-        
-    },
-    {
-        path:'/recipies',
-        route:RecipieRoutes,
-        
-    },
+    
     {
         path:'/books',
         route:BookRoutes,

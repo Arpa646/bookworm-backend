@@ -1148,11 +1148,16 @@
 							{
 								"key": "Content-Type",
 								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}",
+								"description": "User JWT token required. Get this by logging in as a user."
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"userId\": \"user_id_here\",\n  \"bookId\": \"book_id_here\",\n  \"rating\": 5,\n  \"comment\": \"Great book! Highly recommended.\"\n}",
+							"raw": "{\n  \"bookId\": \"book_id_here\",\n  \"rating\": 5,\n  \"comment\": \"Great book! Highly recommended.\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1164,8 +1169,114 @@
 							"host": ["{{baseUrl}}"],
 							"path": ["reviews"]
 						},
-						"description": "Create a new review (rating 1-5)"
-					}
+						"description": "Create a new review for a book. User ID is automatically extracted from the authentication token - no need to include 'userId' field in the request body.\n\n**Required Fields:**\n- bookId: The ID of the book being reviewed\n- rating: Rating from 1 to 5 (integer)\n- comment: Optional review comment (string)\n\n**Note:** Reviews are created with 'pending' status and require admin approval before being displayed publicly."
+					},
+					"response": [
+						{
+							"name": "Success - Review Created",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{userToken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"bookId\": \"book_id_here\",\n  \"rating\": 5,\n  \"comment\": \"Great book! Highly recommended.\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/reviews",
+									"host": ["{{baseUrl}}"],
+									"path": ["reviews"]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": true,\n  \"statusCode\": 200,\n  \"message\": \"Review created successfully\",\n  \"data\": [\n    {\n      \"_id\": \"review_id_here\",\n      \"userId\": \"user_id_from_token\",\n      \"bookId\": \"book_id_here\",\n      \"rating\": 5,\n      \"comment\": \"Great book! Highly recommended.\",\n      \"status\": \"pending\",\n      \"isDeleted\": false,\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n      \"updatedAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}"
+						},
+						{
+							"name": "Unauthorized - Missing Token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"bookId\": \"book_id_here\",\n  \"rating\": 5,\n  \"comment\": \"Great book!\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/reviews",
+									"host": ["{{baseUrl}}"],
+									"path": ["reviews"]
+								}
+							},
+							"status": "Unauthorized",
+							"code": 401,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"statusCode\": 401,\n  \"message\": \"You are not authorized!\"\n}"
+						},
+						{
+							"name": "Bad Request - Invalid Rating",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									},
+									{
+										"key": "Authorization",
+										"value": "Bearer {{userToken}}"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n  \"bookId\": \"book_id_here\",\n  \"rating\": 6,\n  \"comment\": \"Invalid rating\"\n}"
+								},
+								"url": {
+									"raw": "{{baseUrl}}/reviews",
+									"host": ["{{baseUrl}}"],
+									"path": ["reviews"]
+								}
+							},
+							"status": "Bad Request",
+							"code": 400,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								}
+							],
+							"cookie": [],
+							"body": "{\n  \"success\": false,\n  \"statusCode\": 400,\n  \"message\": \"Rating must be between 1 and 5\"\n}"
+						}
+					]
 				},
 				{
 					"name": "Get All Reviews",

@@ -6,8 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const auth_route_1 = require("../modules/Auth/auth.route");
 const user_route_1 = require("../modules/Registration/user.route");
-const premium_route_1 = require("../modules/Premium/premium.route");
-const recipie_route_1 = require("../modules/Recipie/recipie.route");
 const book_route_1 = require("../modules/Books/book.route");
 const genre_route_1 = require("../modules/Genres/genre.route");
 const review_route_1 = require("../modules/Reviews/review.route");
@@ -23,14 +21,6 @@ const modulerRoutes = [
     {
         path: '/auth',
         route: auth_route_1.AuthRoutes,
-    },
-    {
-        path: '/premium',
-        route: premium_route_1.PremiumRoutes,
-    },
-    {
-        path: '/recipies',
-        route: recipie_route_1.RecipieRoutes,
     },
     {
         path: '/books',

@@ -28,6 +28,7 @@ const createShelf = (0, asynch_1.default)((req, res, next) => __awaiter(void 0, 
         });
     }
     const userId = req.user.useremail.toString();
+    console.log("✅ User ID from token:", userId);
     // Check if shelf entry already exists
     const existingShelf = yield shelf_service_1.ShelfServices.getShelfByUserAndBook(userId, bookId);
     if (existingShelf) {

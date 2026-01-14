@@ -14,7 +14,7 @@ const conditionalAdminAuth = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
-router.post("/", ReviewController.createReview);
+router.post("/", auth(USER_ROLE.user, USER_ROLE.admin), ReviewController.createReview);
 router.get("/", conditionalAdminAuth, ReviewController.getAllReviews);
 router.get("/book/:bookId", ReviewController.getReviewsByBook);
 router.get("/user/:userId", ReviewController.getReviewsByUser);

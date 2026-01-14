@@ -20,23 +20,20 @@ const review_service_1 = require("./review.service");
 const createReview = (0, asynch_1.default)((req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     var _a, _b;
     const { bookId, rating, comment } = req.body;
-    // Get userId from token (req.user.useremail contains the ObjectId)
-    const DEFAULT_USER_ID = "673a0ad83e3e75c0f3804dab";
-    let userId;
-    if ((_a = req.user) === null || _a === void 0 ? void 0 : _a.useremail) {
-        // useremail in token contains the user ObjectId
-        userId = req.user.useremail.toString();
-        console.log("   ✅ User ID from token:", userId);
-        console.log("   📋 Token payload:", JSON.stringify(req.user, null, 2));
+    // Debug: Log the entire req.user object to see what's available
+    console.log("🔍 Debug - req.user:", JSON.stringify(req.user, null, 2));
+    console.log("🔍 Debug - req.user?.useremail:", (_a = req.user) === null || _a === void 0 ? void 0 : _a.useremail);
+    // Get userId from token (req.user.useremail contains the user ObjectId)
+    if (!req.user || !req.user.useremail) {
+        console.log("❌ Authentication failed - req.user or useremail missing");
+        return res.status(http_status_codes_1.StatusCodes.UNAUTHORIZED).json({
+            success: false,
+            message: "Authentication required. Please login to create a review.",
+        });
     }
-    else {
-        // Fall back to default if token not present
-        userId = DEFAULT_USER_ID;
-        console.log("   ⚠️  No token found, using default userId:", userId);
-        console.log("   ⚠️  req.user:", JSON.stringify(req.user, null, 2));
-    }
+    const userId = req.user.useremail.toString();
+    console.log("✅ User ID extracted from token:", userId);
     console.log("📝 Review Submission Received:");
-    console.log("   User ID:", userId);
     console.log("   Book ID:", bookId);
     console.log("   Rating:", rating);
     console.log("   Comment:", comment || "No comment provided");
