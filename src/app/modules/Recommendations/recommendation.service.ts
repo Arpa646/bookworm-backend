@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import BookModel from "../Books/book.model";
 import ShelfModel from "../Shelf/shelf.model";
+import RatingModel from "../Ratings/rating.model";
 import ReviewModel from "../Reviews/review.model";
 import GenreModel from "../Genres/genre.model";
 import { BookRecommendation, RecommendationResponse } from "./recommendation.interface";
@@ -91,19 +92,21 @@ const getPersonalizedRecommendations = async (userId: string): Promise<Recommend
       averageUserRating: 0,
     };
 
-    // Get user's reviews to calculate average rating
-    const userReviews = await ReviewModel.find({
+    // Get user's ratings to calculate average rating
+    const userRatings = await RatingModel.find({
       userId: new mongoose.Types.ObjectId(userId),
       isDeleted: false,
     }).lean();
 
-    if (userReviews.length > 0) {
-      const totalRating = userReviews.reduce((sum, review) => sum + review.rating, 0);
-      userStats.averageUserRating = Math.round((totalRating / userReviews.length) * 10) / 10;
+    if (userRatings.length > 0) {
+      const totalRating = userRatings.reduce((sum, rating) => sum + rating.rating, 0);
+      userStats.averageUserRating = Math.round((totalRating / userRatings.length) * 10) / 10;
     }
 
     // Extract genre IDs from read books (genre can be ObjectId or populated object)
     const genreCount: { [key: string]: number } = {};
+    const genreNameMap: { [key: string]: string } = {};
+    
     readBooks.forEach((book: any) => {
       if (book.genre) {
         // Handle both populated genre object and ObjectId
@@ -111,6 +114,11 @@ const getPersonalizedRecommendations = async (userId: string): Promise<Recommend
           ? book.genre._id.toString() 
           : book.genre.toString();
         genreCount[genreId] = (genreCount[genreId] || 0) + 1;
+        
+        // Store genre name if available
+        if (typeof book.genre === 'object' && book.genre.name) {
+          genreNameMap[genreId] = book.genre.name;
+        }
       }
     });
 
@@ -134,7 +142,9 @@ const getPersonalizedRecommendations = async (userId: string): Promise<Recommend
         userId,
         readBookIds,
         userStats.favoriteGenres,
-        userStats.averageUserRating
+        userStats.averageUserRating,
+        genreCount,
+        genreNameMap
       );
     }
 
@@ -160,7 +170,9 @@ const getPersonalizedRecommendationsForUser = async (
   userId: string,
   readBookIds: any[],
   favoriteGenres: string[],
-  averageUserRating: number
+  averageUserRating: number,
+  genreCount: { [key: string]: number },
+  genreNameMap: { [key: string]: string }
 ): Promise<BookRecommendation[]> => {
   const recommendations: BookRecommendation[] = [];
 
@@ -205,11 +217,10 @@ const getPersonalizedRecommendationsForUser = async (
 
   // Get ratings for candidate books
   const bookIds = candidateBooks.map((book: any) => book._id);
-  const ratingAggregation = await ReviewModel.aggregate([
+  const ratingAggregation = await RatingModel.aggregate([
     {
       $match: {
         bookId: { $in: bookIds },
-        status: "approved",
         isDeleted: false,
       },
     },
@@ -231,10 +242,34 @@ const getPersonalizedRecommendationsForUser = async (
     });
   });
 
+  // Get community-approved reviews for candidate books
+  const reviewAggregation = await ReviewModel.aggregate([
+    {
+      $match: {
+        bookId: { $in: bookIds },
+        status: "approved",
+        isDeleted: false,
+      },
+    },
+    {
+      $group: {
+        _id: "$bookId",
+        totalApprovedReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
+  // Create review map
+  const reviewMap = new Map();
+  reviewAggregation.forEach((item) => {
+    reviewMap.set(item._id.toString(), item.totalApprovedReviews);
+  });
+
   // Build recommendations with explanations
   for (const book of candidateBooks) {
     const bookId = book._id.toString();
     const ratingData = ratingMap.get(bookId) || { averageRating: 0, totalRatings: 0 };
+    const approvedReviewsCount = reviewMap.get(bookId) || 0;
     
     // Calculate match score
     let matchScore = 0;
@@ -247,36 +282,45 @@ const getPersonalizedRecommendationsForUser = async (
     if (book.genre) {
       if (typeof book.genre === 'object' && book.genre !== null && '_id' in book.genre) {
         // Populated genre object
-        bookGenreId = (book.genre as any)._id.toString();
+        bookGenreId = (book.genre as any)._id?.toString() || null;
         genreName = (book.genre as any).name || 'this genre';
-      } else {
+      } else if (book.genre !== null) {
         // ObjectId string
         bookGenreId = book.genre.toString();
       }
     }
     
+    // Factor 1: Genre match from "Read" shelf (most common genres)
     if (bookGenreId && favoriteGenres.includes(bookGenreId)) {
-      const genreCount = favoriteGenres.filter((g) => g === bookGenreId).length;
+      const booksReadInGenre = genreCount[bookGenreId] || 0;
+      // Use genre name from map if available, otherwise use the one from book object
+      const displayGenreName = genreNameMap[bookGenreId] || genreName || 'this genre';
       matchScore += 30;
-      reasons.push(`Matches your preference for ${genreName} (${genreCount} book${genreCount > 1 ? 's' : ''} read)`);
+      reasons.push(`Matches your preference for ${displayGenreName} (${booksReadInGenre} book${booksReadInGenre > 1 ? 's' : ''} read)`);
     }
 
-    // High community rating
+    // Factor 2: High community rating (average user ratings)
     if (ratingData.averageRating >= 4.0 && ratingData.totalRatings >= 5) {
       matchScore += 25;
-      reasons.push(`Highly rated by community (${ratingData.averageRating.toFixed(1)}/5.0 from ${ratingData.totalRatings} reviews)`);
+      reasons.push(`Highly rated by community (${ratingData.averageRating.toFixed(1)}/5.0 from ${ratingData.totalRatings} ratings)`);
     }
 
-    // Matches user's rating preference
+    // Factor 3: Matches user's average rating preference
     if (averageUserRating > 0 && Math.abs(ratingData.averageRating - averageUserRating) <= 0.5) {
       matchScore += 20;
       reasons.push(`Matches your rating preference (you average ${averageUserRating.toFixed(1)}/5.0)`);
     }
 
-    // High number of reviews (community-approved)
+    // Factor 4: High number of community-approved reviews in similar genres
+    if (approvedReviewsCount >= 5) {
+      matchScore += 18;
+      reasons.push(`Highly reviewed by community (${approvedReviewsCount} approved reviews)`);
+    }
+
+    // High number of ratings (community-rated)
     if (ratingData.totalRatings >= 10) {
       matchScore += 15;
-      reasons.push(`Well-reviewed by community (${ratingData.totalRatings} approved reviews)`);
+      reasons.push(`Well-rated by community (${ratingData.totalRatings} ratings)`);
     }
 
     // Genre similarity (even if not exact match)
@@ -343,11 +387,10 @@ const getFallbackRecommendations = async (
   const bookIds = allBooks.map((book: any) => book._id);
 
   // Get ratings and shelf counts
-  const ratingAggregation = await ReviewModel.aggregate([
+  const ratingAggregation = await RatingModel.aggregate([
     {
       $match: {
         bookId: { $in: bookIds },
-        status: "approved",
         isDeleted: false,
       },
     },
@@ -376,6 +419,23 @@ const getFallbackRecommendations = async (
     },
   ]);
 
+  // Get community-approved reviews count
+  const reviewAggregation = await ReviewModel.aggregate([
+    {
+      $match: {
+        bookId: { $in: bookIds },
+        status: "approved",
+        isDeleted: false,
+      },
+    },
+    {
+      $group: {
+        _id: "$bookId",
+        totalApprovedReviews: { $sum: 1 },
+      },
+    },
+  ]);
+
   // Create maps
   const ratingMap = new Map();
   ratingAggregation.forEach((item) => {
@@ -390,17 +450,23 @@ const getFallbackRecommendations = async (
     shelfCountMap.set(item._id.toString(), item.shelfCount);
   });
 
+  const reviewMap = new Map();
+  reviewAggregation.forEach((item) => {
+    reviewMap.set(item._id.toString(), item.totalApprovedReviews);
+  });
+
   // Build recommendations
   for (const book of allBooks) {
     const bookId = book._id.toString();
     const ratingData = ratingMap.get(bookId) || { averageRating: 0, totalRatings: 0 };
     const shelfCount = shelfCountMap.get(bookId) || 0;
+    const approvedReviewsCount = reviewMap.get(bookId) || 0;
 
     const reasons: string[] = [];
 
     // High rating
     if (ratingData.averageRating >= 4.0 && ratingData.totalRatings >= 5) {
-      reasons.push(`Highly rated (${ratingData.averageRating.toFixed(1)}/5.0 from ${ratingData.totalRatings} reviews)`);
+      reasons.push(`Highly rated (${ratingData.averageRating.toFixed(1)}/5.0 from ${ratingData.totalRatings} ratings)`);
     }
 
     // Popular (many shelves)
@@ -408,9 +474,14 @@ const getFallbackRecommendations = async (
       reasons.push(`Popular choice (added to ${shelfCount} shelves)`);
     }
 
-    // Well-reviewed
+    // High number of community-approved reviews
+    if (approvedReviewsCount >= 5) {
+      reasons.push(`Highly reviewed by community (${approvedReviewsCount} approved reviews)`);
+    }
+
+    // Well-rated
     if (ratingData.totalRatings >= 10) {
-      reasons.push(`Well-reviewed by community (${ratingData.totalRatings} approved reviews)`);
+      reasons.push(`Well-rated by community (${ratingData.totalRatings} ratings)`);
     }
 
     recommendations.push({
@@ -420,7 +491,7 @@ const getFallbackRecommendations = async (
       recommendationReason: reasons.length > 0 
         ? reasons.join(". ") 
         : "Popular book in our community",
-      matchScore: ratingData.averageRating * 10 + shelfCount + ratingData.totalRatings,
+      matchScore: ratingData.averageRating * 10 + shelfCount + ratingData.totalRatings + approvedReviewsCount * 2,
     });
   }
 

@@ -11,18 +11,17 @@ import { RecommendationServices } from "./recommendation.service";
 const getRecommendations = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     // Get userId from token (req.user.useremail contains the ObjectId)
-    const DEFAULT_USER_ID = "673a0ad83e3e75c0f3804dab";
-    let userId: string;
-
-    if (req.user?.useremail) {
-      // useremail in token contains the user ObjectId
-      userId = req.user.useremail.toString();
-      console.log("✅ User ID from token:", userId);
-    } else {
-      // Fall back to default if token not present
-      userId = DEFAULT_USER_ID;
-      console.log("⚠️  No token found, using default userId:", userId);
+    if (!req.user?.useremail) {
+      return sendResponse(res, {
+        statusCode: StatusCodes.UNAUTHORIZED,
+        success: false,
+        message: "Authentication required. Please provide a valid token.",
+        data: null,
+      });
     }
+
+    const userId = req.user.useremail.toString();
+    console.log("✅ User ID from token:", userId);
 
     const result = await RecommendationServices.getPersonalizedRecommendations(userId);
 
