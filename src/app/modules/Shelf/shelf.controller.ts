@@ -158,31 +158,6 @@ const getShelvesByUser = async (req: Request, res: Response) => {
   }
 };
 
-const getShelvesByBook = async (req: Request, res: Response) => {
-  try {
-    const { bookId } = req.params;
-    const shelves = await ShelfServices.getShelvesByBookId(bookId);
-
-    res.status(StatusCodes.OK).json({
-      success: true,
-      message: "Book shelf entries retrieved successfully",
-      data: shelves,
-    });
-  } catch (err) {
-    if (err instanceof Error) {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: "Server error",
-        error: err.message,
-      });
-    } else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-        success: false,
-        message: "Unknown server error",
-      });
-    }
-  }
-};
 
 const updateShelf = async (req: Request, res: Response) => {
   const { id } = req.params;
@@ -265,6 +240,31 @@ const deleteShelf = catchAsync(
     }
   }
 );
+const getShelvesByBook = async (req: Request, res: Response) => {
+  try {
+    const { bookId } = req.params;
+    const shelves = await ShelfServices.getShelvesByBookId(bookId);
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: "Book shelf entries retrieved successfully",
+      data: shelves,
+    });
+  } catch (err) {
+    if (err instanceof Error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "Server error",
+        error: err.message,
+      });
+    } else {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: "Unknown server error",
+      });
+    }
+  }
+};
 
 export const ShelfController = {
   createShelf,
